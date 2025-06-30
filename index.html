@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Confirm Your Email - StyleWise</title>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            padding: 40px;
+            max-width: 500px;
+            width: 100%;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+        }
+
+        .logo {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 10px;
+            letter-spacing: -1px;
+        }
+
+        .tagline {
+            color: #666;
+            font-size: 1.1rem;
+            margin-bottom: 30px;
+        }
+
+        .status-card {
+            background: #f8f9ff;
+            border: 2px solid #e8eaff;
+            border-radius: 15px;
+            padding: 30px;
+            margin: 20px 0;
+            transition: all 0.3s ease;
+        }
+
+        .status-card.success {
+            background: #f0fff4;
+            border-color: #68d391;
+        }
+
+        .status-card.error {
+            background: #fff5f5;
+            border-color: #fc8181;
+        }
+
+        .status-card.loading {
+            background: #f8f9ff;
+            border-color: #667eea;
+        }
+
+        .status-icon {
+            font-size: 3rem;
+            margin-bottom: 15px;
+        }
+
+        .status-icon.success {
+            color: #48bb78;
+        }
+
+        .status-icon.error {
+            color: #f56565;
+        }
+
+        .status-icon.loading {
+            color: #667eea;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            border: 4px solid #e8eaff;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .status-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .status-message {
+            color: #666;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+            margin: 10px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: #667eea;
+            border: 2px solid #667eea;
+            margin: 10px;
+        }
+
+        .btn-secondary:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        .footer {
+            margin-top: 30px;
+            color: #999;
+            font-size: 0.9rem;
+        }
+
+        .footer a {
+            color: #667eea;
+            text-decoration: none;
+        }
+
+        .footer a:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 30px 20px;
+            }
+            
+            .logo {
+                font-size: 2rem;
+            }
+            
+            .status-card {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">StyleWise</div>
+        <div class="tagline">Your Personal Fashion Assistant</div>
+        
+        <div id="statusCard" class="status-card loading">
+            <div class="status-icon loading">
+                <div class="spinner"></div>
+            </div>
+            <div class="status-title">Confirming Your Email</div>
+            <div class="status-message">Please wait while we verify your email address...</div>
+        </div>
+        
+        <div id="actionButtons" style="display: none;">
+            <a href="#" id="openAppBtn" class="btn">Open StyleWise App</a>
+            <a href="https://styleswise.io" class="btn btn-secondary">Visit Website</a>
+        </div>
+        
+        <div class="footer">
+            <p>Having trouble? <a href="mailto:support@styleswise.io">Contact Support</a></p>
+            <p>&copy; 2024 StyleWise. All rights reserved.</p>
+        </div>
+    </div>
+
+    <script>
+        // Initialize Supabase client
+        // Replace these with your actual Supabase credentials
+        const supabaseUrl = 'https://iehbnglwxtwxlveaeknp.supabase.co'
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImllaGJuZ2x3eHR3eGx2ZWFla25wIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY5MTE0NTIsImV4cCI6MjA2MjQ4NzQ1Mn0.652L15y6Nz0xVEWbuIQxbFAeb7yKK7Eravs_wphI2BU'
+        const supabase = window.supabase.createClient(supabaseUrl, supabaseKey)
+
+        // Get URL parameters
+        const urlParams = new URLSearchParams(window.location.search)
+        const accessToken = urlParams.get('access_token')
+        const refreshToken = urlParams.get('refresh_token')
+        const type = urlParams.get('type')
+
+        // Handle the confirmation process
+        async function handleEmailConfirmation() {
+            const statusCard = document.getElementById('statusCard')
+            const statusIcon = statusCard.querySelector('.status-icon')
+            const statusTitle = statusCard.querySelector('.status-title')
+            const statusMessage = statusCard.querySelector('.status-message')
+            const actionButtons = document.getElementById('actionButtons')
+            const openAppBtn = document.getElementById('openAppBtn')
+
+            try {
+                // Check if we have the necessary tokens
+                if (!accessToken || !refreshToken) {
+                    throw new Error('Missing confirmation tokens')
+                }
+
+                // Exchange the code for a session
+                const { data, error } = await supabase.auth.exchangeCodeForSession(
+                    window.location.hash.substring(1) // Remove the # from the hash
+                )
+
+                if (error) {
+                    throw error
+                }
+
+                // Success - update UI
+                statusCard.className = 'status-card success'
+                statusIcon.className = 'status-icon success'
+                statusIcon.innerHTML = '✓'
+                statusTitle.textContent = 'Email Confirmed!'
+                statusMessage.innerHTML = `
+                    Welcome to StyleWise! Your email has been successfully confirmed.<br><br>
+                    You can now use all the features of your StyleWise account.
+                `
+
+                // Show action buttons
+                actionButtons.style.display = 'block'
+
+                // Set up deep link for mobile app
+                const deepLink = 'stylewise://email-confirmed'
+                openAppBtn.href = deepLink
+
+                // Try to open the app, fallback to website if it fails
+                openAppBtn.addEventListener('click', (e) => {
+                    e.preventDefault()
+                    window.location.href = deepLink
+                    
+                    // Fallback to website after a short delay
+                    setTimeout(() => {
+                        window.location.href = 'https://styleswise.io'
+                    }, 2000)
+                })
+
+                // Store confirmation in localStorage for app access
+                localStorage.setItem('stylewise_email_confirmed', 'true')
+                localStorage.setItem('stylewise_user_email', data.user?.email || '')
+
+            } catch (error) {
+                console.error('Confirmation error:', error)
+                
+                // Error - update UI
+                statusCard.className = 'status-card error'
+                statusIcon.className = 'status-icon error'
+                statusIcon.innerHTML = '✗'
+                statusTitle.textContent = 'Confirmation Failed'
+                statusMessage.innerHTML = `
+                    We couldn't confirm your email address.<br><br>
+                    This might be because the link has expired or is invalid.<br>
+                    Please try signing up again or contact support.
+                `
+
+                // Show action buttons
+                actionButtons.style.display = 'block'
+                openAppBtn.textContent = 'Try Again'
+                openAppBtn.href = 'https://styleswise.io/signup'
+            }
+        }
+
+        // Handle different confirmation scenarios
+        function handleConfirmation() {
+            // Check if this is a password reset or email confirmation
+            if (type === 'recovery') {
+                // Handle password reset
+                handlePasswordReset()
+            } else {
+                // Handle email confirmation
+                handleEmailConfirmation()
+            }
+        }
+
+        async function handlePasswordReset() {
+            const statusCard = document.getElementById('statusCard')
+            const statusIcon = statusCard.querySelector('.status-icon')
+            const statusTitle = statusCard.querySelector('.status-title')
+            const statusMessage = statusCard.querySelector('.status-message')
+            const actionButtons = document.getElementById('actionButtons')
+            const openAppBtn = document.getElementById('openAppBtn')
+
+            try {
+                // Exchange the code for a session
+                const { data, error } = await supabase.auth.exchangeCodeForSession(
+                    window.location.hash.substring(1)
+                )
+
+                if (error) {
+                    throw error
+                }
+
+                // Success - update UI
+                statusCard.className = 'status-card success'
+                statusIcon.className = 'status-icon success'
+                statusIcon.innerHTML = '✓'
+                statusTitle.textContent = 'Password Reset Complete!'
+                statusMessage.innerHTML = `
+                    Your password has been successfully reset.<br><br>
+                    You can now log in to your StyleWise account with your new password.
+                `
+
+                // Show action buttons
+                actionButtons.style.display = 'block'
+                openAppBtn.textContent = 'Open StyleWise App'
+
+            } catch (error) {
+                console.error('Password reset error:', error)
+                
+                // Error - update UI
+                statusCard.className = 'status-card error'
+                statusIcon.className = 'status-icon error'
+                statusIcon.innerHTML = '✗'
+                statusTitle.textContent = 'Password Reset Failed'
+                statusMessage.innerHTML = `
+                    We couldn't complete your password reset.<br><br>
+                    This might be because the link has expired or is invalid.<br>
+                    Please try requesting a new password reset.
+                `
+
+                // Show action buttons
+                actionButtons.style.display = 'block'
+                openAppBtn.textContent = 'Request New Reset'
+                openAppBtn.href = 'https://styleswise.io/reset-password'
+            }
+        }
+
+        // Start the confirmation process when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            // Add a small delay to show the loading state
+            setTimeout(() => {
+                handleConfirmation()
+            }, 1000)
+        })
+
+        // Handle cases where the page is accessed without tokens
+        if (!accessToken && !refreshToken && !window.location.hash) {
+            document.addEventListener('DOMContentLoaded', () => {
+                const statusCard = document.getElementById('statusCard')
+                const statusIcon = statusCard.querySelector('.status-icon')
+                const statusTitle = statusCard.querySelector('.status-title')
+                const statusMessage = statusCard.querySelector('.status-message')
+                const actionButtons = document.getElementById('actionButtons')
+                const openAppBtn = document.getElementById('openAppBtn')
+
+                statusCard.className = 'status-card error'
+                statusIcon.className = 'status-icon error'
+                statusIcon.innerHTML = '⚠'
+                statusTitle.textContent = 'Invalid Link'
+                statusMessage.innerHTML = `
+                    This confirmation link appears to be invalid or has expired.<br><br>
+                    Please check your email for the correct link, or try signing up again.
+                `
+
+                actionButtons.style.display = 'block'
+                openAppBtn.textContent = 'Go to Sign Up'
+                openAppBtn.href = 'https://styleswise.io/signup'
+            })
+        }
+    </script>
+</body>
+</html>
