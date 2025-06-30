@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StyleWise Email Confirmation - Test Page</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+            text-align: center;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+        .logo {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 2px solid #e8eaff;
+            border-radius: 15px;
+            background: #f8f9ff;
+        }
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            margin: 10px;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+        .status {
+            padding: 10px;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+        .status.success {
+            background: #f0fff4;
+            color: #22543d;
+            border: 1px solid #68d391;
+        }
+        .status.error {
+            background: #fff5f5;
+            color: #742a2a;
+            border: 1px solid #fc8181;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">StyleWise</div>
+        <h2>Email Confirmation Test Page</h2>
+        
+        <div class="test-section">
+            <h3>🔧 Configuration Test</h3>
+            <p>This page tests if your email confirmation setup is working correctly.</p>
+            
+            <div id="configStatus" class="status">
+                Checking configuration...
+            </div>
+            
+            <button class="btn" onclick="testConfiguration()">Test Configuration</button>
+        </div>
+        
+        <div class="test-section">
+            <h3>📧 Email Confirmation Flow Test</h3>
+            <p>Test the email confirmation flow with sample data.</p>
+            
+            <div id="flowStatus" class="status">
+                Ready to test...
+            </div>
+            
+            <button class="btn" onclick="testEmailFlow()">Test Email Flow</button>
+        </div>
+        
+        <div class="test-section">
+            <h3>🔗 URL Parameters Test</h3>
+            <p>Check if URL parameters are being parsed correctly.</p>
+            
+            <div id="urlStatus" class="status">
+                No URL parameters detected
+            </div>
+            
+            <button class="btn" onclick="testUrlParams()">Test URL Parameters</button>
+        </div>
+        
+        <div class="test-section">
+            <h3>📱 Deep Link Test</h3>
+            <p>Test the mobile app deep linking functionality.</p>
+            
+            <button class="btn" onclick="testDeepLink()">Test Deep Link</button>
+            <button class="btn" onclick="testFallback()">Test Fallback</button>
+        </div>
+        
+        <div style="margin-top: 30px;">
+            <a href="confirm-email.html" class="btn">View Confirmation Page</a>
+            <a href="README.md" class="btn">View Documentation</a>
+        </div>
+    </div>
+
+    <script>
+        // Test configuration
+        function testConfiguration() {
+            const status = document.getElementById('configStatus');
+            
+            // Check if Supabase is loaded
+            if (typeof window.supabase === 'undefined') {
+                status.className = 'status error';
+                status.textContent = '❌ Supabase library not loaded';
+                return;
+            }
+            
+            // Check if config exists
+            if (typeof window.stylewiseConfig === 'undefined') {
+                status.className = 'status error';
+                status.textContent = '❌ Configuration not found. Make sure config.js is loaded.';
+                return;
+            }
+            
+            const config = window.stylewiseConfig;
+            
+            // Check required fields
+            const required = ['supabase.url', 'supabase.anonKey', 'app.name', 'app.website'];
+            const missing = required.filter(field => {
+                const value = field.split('.').reduce((obj, key) => obj?.[key], config);
+                return !value || value.includes('YOUR_');
+            });
+            
+            if (missing.length > 0) {
+                status.className = 'status error';
+                status.textContent = `❌ Missing configuration: ${missing.join(', ')}`;
+                return;
+            }
+            
+            status.className = 'status success';
+            status.textContent = '✅ Configuration looks good!';
+        }
+        
+        // Test email flow
+        function testEmailFlow() {
+            const status = document.getElementById('flowStatus');
+            
+            // Simulate a confirmation URL
+            const testUrl = 'https://styleswise.io/confirm-email?access_token=test_token&refresh_token=test_refresh&type=signup#access_token=test_access&refresh_token=test_refresh&type=signup';
+            
+            const url = new URL(testUrl);
+            const params = url.searchParams;
+            const hash = url.hash.substring(1);
+            
+            const accessToken = params.get('access_token');
+            const refreshToken = params.get('refresh_token');
+            const type = params.get('type');
+            
+            status.className = 'status success';
+            status.innerHTML = `
+                ✅ Email flow test completed<br>
+                Access Token: ${accessToken ? '✅ Present' : '❌ Missing'}<br>
+                Refresh Token: ${refreshToken ? '✅ Present' : '❌ Missing'}<br>
+                Type: ${type || 'Not specified'}<br>
+                Hash: ${hash ? '✅ Present' : '❌ Missing'}
+            `;
+        }
+        
+        // Test URL parameters
+        function testUrlParams() {
+            const status = document.getElementById('urlStatus');
+            const urlParams = new URLSearchParams(window.location.search);
+            const hash = window.location.hash;
+            
+            const accessToken = urlParams.get('access_token');
+            const refreshToken = urlParams.get('refresh_token');
+            const type = urlParams.get('type');
+            
+            if (!accessToken && !refreshToken && !hash) {
+                status.className = 'status';
+                status.textContent = 'No URL parameters detected (this is normal for direct access)';
+                return;
+            }
+            
+            status.className = 'status success';
+            status.innerHTML = `
+                ✅ URL parameters detected<br>
+                Access Token: ${accessToken ? '✅ Present' : '❌ Missing'}<br>
+                Refresh Token: ${refreshToken ? '✅ Present' : '❌ Missing'}<br>
+                Type: ${type || 'Not specified'}<br>
+                Hash: ${hash ? '✅ Present' : '❌ Missing'}
+            `;
+        }
+        
+        // Test deep link
+        function testDeepLink() {
+            const config = window.stylewiseConfig || { app: { deepLinkScheme: 'stylewise://' } };
+            const deepLink = `${config.app.deepLinkScheme}email-confirmed`;
+            
+            console.log('Testing deep link:', deepLink);
+            alert(`Testing deep link: ${deepLink}\n\nThis would attempt to open your mobile app.`);
+        }
+        
+        // Test fallback
+        function testFallback() {
+            const config = window.stylewiseConfig || { app: { website: 'https://styleswise.io' } };
+            
+            console.log('Testing fallback to:', config.app.website);
+            alert(`Testing fallback to: ${config.app.website}\n\nThis would redirect to your website if the app isn't available.`);
+        }
+        
+        // Auto-run configuration test on load
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(testConfiguration, 1000);
+            setTimeout(testUrlParams, 1000);
+        });
+    </script>
+</body>
+</html> 
